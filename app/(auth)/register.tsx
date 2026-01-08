@@ -1,4 +1,4 @@
-// app/(auth)/login.tsx
+// app/(auth)/register.tsx
 import React, { useState } from "react";
 import {
     View,
@@ -14,7 +14,9 @@ import {
     ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
+
 import { login } from "../../src/api/client";
+import { register as apiRegister } from "../../src/api/registerClient";
 
 const COLORS = {
     white: "#FFFFFF",
@@ -29,26 +31,57 @@ const COLORS = {
     error: "#B00020",
 };
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
     const router = useRouter();
     const { width } = useWindowDimensions();
-
-    // proche de ton CSS desktop
     const isWide = width >= 900;
 
-    const [email, setEmail] = useState("test@gmail.com");
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+
+    const [adresse, setAdresse] = useState("");
+    const [ville, setVille] = useState("");
+    const [codePostal, setCodePostal] = useState("");
+
     const [msg, setMsg] = useState("");
     const [loading, setLoading] = useState(false);
 
+    function validate() {
+        if (!name.trim()) return "Nom obligatoire";
+        if (!email.trim()) return "Email obligatoire";
+        if (!password || password.length < 6) return "Mot de passe (min 6 caractères)";
+        if (!adresse.trim()) return "Adresse obligatoire";
+        if (!ville.trim()) return "Ville obligatoire";
+        if (!codePostal.trim()) return "Code postal obligatoire";
+        return null;
+    }
+
     async function onSubmit() {
+        const err = validate();
+        if (err) {
+            setMsg(err);
+            return;
+        }
+
         try {
             setMsg("");
             setLoading(true);
 
+            // 1) Register
+            await apiRegister({
+                name: name.trim(),
+                email: email.trim(),
+                password,
+                adresse: adresse.trim(),
+                ville: ville.trim(),
+                codePostal: codePostal.trim(),
+            });
+
+            // 2) Auto-login
             await login(email.trim(), password);
 
-            // une fois loggé : direction l’app
+            // 3) Go to app
             router.replace("/(tabs)");
         } catch (e: any) {
             setMsg(e?.message || "Erreur inconnue");
@@ -78,21 +111,31 @@ export default function LoginScreen() {
                         </View>
                     </ImageBackground>
 
-                    {/* RIGHT (form) */}
+                    {/* RIGHT */}
                     <View style={styles.right}>
                         <View style={styles.header}>
-                            <Text style={styles.eyebrow}>Bienvenue</Text>
-
+                            <Text style={styles.eyebrow}>Inscription</Text>
                             <Text style={styles.title}>
-                                Nous sommes <Text style={styles.titleGreen}>Tri’n Go</Text>
+                                Créer un compte <Text style={styles.titleGreen}>citoyen</Text>
                             </Text>
-
                             <Text style={styles.subtitle}>
-                                Connectez-vous pour déclarer les encombrants de votre ville.
+                                Remplissez vos informations pour commencer à déclarer des encombrants.
                             </Text>
                         </View>
 
                         <View style={styles.form}>
+                            <Text style={styles.label}>Nom</Text>
+                            <View style={styles.inputWrap}>
+                                <Text style={styles.prefix}>👤</Text>
+                                <TextInput
+                                    value={name}
+                                    onChangeText={setName}
+                                    placeholder="Votre nom"
+                                    placeholderTextColor={COLORS.placeholder}
+                                    style={styles.input}
+                                />
+                            </View>
+
                             <Text style={styles.label}>Email</Text>
                             <View style={styles.inputWrap}>
                                 <Text style={styles.prefix}>✉</Text>
@@ -114,10 +157,54 @@ export default function LoginScreen() {
                                     value={password}
                                     onChangeText={setPassword}
                                     secureTextEntry
-                                    placeholder="Votre mot de passe"
+                                    placeholder="Min 6 caractères"
                                     placeholderTextColor={COLORS.placeholder}
                                     style={styles.input}
                                 />
+                            </View>
+
+                            <Text style={styles.label}>Adresse</Text>
+                            <View style={styles.inputWrap}>
+                                <Text style={styles.prefix}>📍</Text>
+                                <TextInput
+                                    value={adresse}
+                                    onChangeText={setAdresse}
+                                    placeholder="Ex: 12 rue de la Paix"
+                                    placeholderTextColor={COLORS.placeholder}
+                                    style={styles.input}
+                                />
+                            </View>
+
+                            {/* Ville + Code postal sur la même ligne */}
+                            <View style={styles.row2}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.label}>Ville</Text>
+                                    <View style={styles.inputWrap}>
+                                        <Text style={styles.prefix}>🏙️</Text>
+                                        <TextInput
+                                            value={ville}
+                                            onChangeText={setVille}
+                                            placeholder="Amiens"
+                                            placeholderTextColor={COLORS.placeholder}
+                                            style={styles.input}
+                                        />
+                                    </View>
+                                </View>
+
+                                <View style={{ flex: 1 }}>
+                                    <Text style={styles.label}>Code postal</Text>
+                                    <View style={styles.inputWrap}>
+                                        <Text style={styles.prefix}>#</Text>
+                                        <TextInput
+                                            value={codePostal}
+                                            onChangeText={setCodePostal}
+                                            placeholder="80000"
+                                            placeholderTextColor={COLORS.placeholder}
+                                            keyboardType="number-pad"
+                                            style={styles.input}
+                                        />
+                                    </View>
+                                </View>
                             </View>
 
                             {!!msg && <Text style={styles.error}>{msg}</Text>}
@@ -130,17 +217,17 @@ export default function LoginScreen() {
                                 {loading ? (
                                     <ActivityIndicator color="#fff" />
                                 ) : (
-                                    <Text style={styles.btnText}>Se connecter</Text>
+                                    <Text style={styles.btnText}>Créer mon compte</Text>
                                 )}
                             </Pressable>
 
                             <Text style={styles.footer}>
-                                Pas encore de compte citoyen ?{" "}
+                                Déjà un compte ?{" "}
                                 <Text
                                     style={styles.footerLink}
-                                    onPress={() => router.push("/(auth)/register")}
+                                    onPress={() => router.replace("/(auth)/login")}
                                 >
-                                    Créer un compte
+                                    Se connecter
                                 </Text>
                             </Text>
                         </View>
@@ -154,7 +241,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     page: { flex: 1, backgroundColor: COLORS.bg },
 
-    // IMPORTANT : sinon tu peux “perdre” le form en bas sur mobile
     scrollContent: {
         flexGrow: 1,
         paddingHorizontal: 16,
@@ -169,7 +255,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderRadius: 28,
         overflow: "hidden",
-        minHeight: 520,
+        minHeight: 620,
         shadowColor: COLORS.blue,
         shadowOpacity: 0.15,
         shadowRadius: 24,
@@ -179,11 +265,9 @@ const styles = StyleSheet.create({
     cardRow: { flexDirection: "row" },
     cardCol: { flexDirection: "column" },
 
-    // LEFT
     left: { justifyContent: "flex-start" },
-    leftWide: { flexBasis: "42%", minHeight: 420 },
+    leftWide: { flexBasis: "42%", minHeight: 520 },
     leftNarrow: { width: "100%", height: 220 },
-
     leftImg: { resizeMode: "cover" },
 
     logoCircle: {
@@ -207,7 +291,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
     },
 
-    // RIGHT
     right: {
         flex: 1,
         paddingHorizontal: 22,
@@ -224,18 +307,9 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         marginBottom: 6,
     },
-    title: {
-        fontSize: 26,
-        fontWeight: "800",
-        color: COLORS.title,
-    },
+    title: { fontSize: 26, fontWeight: "800", color: COLORS.title },
     titleGreen: { color: COLORS.green },
-    subtitle: {
-        marginTop: 8,
-        color: COLORS.subtitle,
-        fontSize: 14,
-        lineHeight: 20,
-    },
+    subtitle: { marginTop: 8, color: COLORS.subtitle, fontSize: 14, lineHeight: 20 },
 
     form: { marginTop: 10 },
 
@@ -264,17 +338,15 @@ const styles = StyleSheet.create({
         fontSize: 15,
         opacity: 0.65,
     },
-    input: {
-        fontSize: 14,
-        color: "#111827",
+    input: { fontSize: 14, color: "#111827" },
+
+    row2: {
+        marginTop: 6,
+        flexDirection: "row",
+        gap: 12,
     },
 
-    error: {
-        marginTop: 12,
-        color: COLORS.error,
-        fontSize: 13,
-        fontWeight: "600",
-    },
+    error: { marginTop: 12, color: COLORS.error, fontSize: 13, fontWeight: "600" },
 
     btn: {
         marginTop: 18,

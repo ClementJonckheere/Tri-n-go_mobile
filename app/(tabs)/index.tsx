@@ -1,43 +1,35 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, Button } from "react-native";
+import { me } from "../../src/api/client";
+import { clearToken } from "../../src/auth/session";
 import { useRouter } from "expo-router";
-import { me, logout, hasToken } from "../../src/api/client";
 
-export default function HomeScreen() {
+export default function Home() {
+  const [user, setUser] = useState<any>(null);
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [userLabel, setUserLabel] = useState("");
 
   useEffect(() => {
     (async () => {
-      try {
-        const tokenExists = await hasToken();
-        if (!tokenExists) {
-          router.replace("/(auth)/login");
-          return;
-        }
-        const u = await me();
-        setUserLabel(`${u.name} (${u.role})`);
-      } catch (e) {
-        await logout();
-        router.replace("/(auth)/login");
-      } finally {
-        setLoading(false);
-      }
+      const u = await me();
+      setUser(u);
     })();
   }, []);
 
-  async function onLogout() {
-    await logout();
+  async function logout() {
+    await clearToken();
     router.replace("/(auth)/login");
   }
 
-  if (loading) return <View style={{ padding: 40 }}><Text>Chargement…</Text></View>;
-
   return (
-      <View style={{ padding: 40 }}>
-        <Text style={{ marginBottom: 12, fontSize: 18 }}>Bonjour {userLabel}</Text>
-        <Button title="Se déconnecter" onPress={onLogout} />
+      <View style={{ padding: 16 }}>
+        <Text style={{ fontSize: 18, fontWeight: "700" }}>Bienvenue</Text>
+        <Text style={{ marginTop: 8 }}>
+          {user ? `Bonjour ${user.name} (${user.role})` : "Chargement..."}
+        </Text>
+
+        <View style={{ marginTop: 16 }}>
+          <Button title="Se déconnecter" onPress={logout} />
+        </View>
       </View>
   );
 }
