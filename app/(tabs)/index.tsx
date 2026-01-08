@@ -1,30 +1,43 @@
-import React, { useState } from 'react';
-import { View, Text, Button } from 'react-native';
-import { login, me, getSignalements } from '../../src/api/client';
+import React, { useEffect, useState } from "react";
+import { View, Text, Button } from "react-native";
+import { useRouter } from "expo-router";
+import { me, logout, hasToken } from "../../src/api/client";
 
 export default function HomeScreen() {
-  const [msg, setMsg] = useState('Ready');
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [userLabel, setUserLabel] = useState("");
 
-  async function test() {
-    try {
-      setMsg('Login...');
-      await login('test@gmail.com', 'Azerty123');
+  useEffect(() => {
+    (async () => {
+      try {
+        const tokenExists = await hasToken();
+        if (!tokenExists) {
+          router.replace("/(auth)/login");
+          return;
+        }
+        const u = await me();
+        setUserLabel(`${u.name} (${u.role})`);
+      } catch (e) {
+        await logout();
+        router.replace("/(auth)/login");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
-      setMsg('Fetching me...');
-      const u = await me();
-      setMsg(`Bonjour ${u.name} (${u.role})`);
-
-      const list = await getSignalements();
-      setMsg(`OK, signalements: ${list.length}`);
-    } catch (e: any) {
-      setMsg(`Erreur: ${e.message}`);
-    }
+  async function onLogout() {
+    await logout();
+    router.replace("/(auth)/login");
   }
+
+  if (loading) return <View style={{ padding: 40 }}><Text>Chargement…</Text></View>;
 
   return (
       <View style={{ padding: 40 }}>
-        <Text style={{ marginBottom: 12 }}>{msg}</Text>
-        <Button title="Tester API" onPress={test} />
+        <Text style={{ marginBottom: 12, fontSize: 18 }}>Bonjour {userLabel}</Text>
+        <Button title="Se déconnecter" onPress={onLogout} />
       </View>
   );
 }

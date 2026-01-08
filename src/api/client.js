@@ -38,3 +38,12 @@ export async function getSignalements() {
     const data = await request('/signalements');
     return data.items;
 }
+
+export async function logout() {
+    await SecureStore.deleteItemAsync('token');
+}
+
+export async function hasToken() {
+    const t = await getToken();
+    return !!t;
+}
