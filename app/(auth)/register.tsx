@@ -15,8 +15,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 
-import { login } from "../../src/api/client";
-import { register as apiRegister } from "../../src/api/registerClient";
+import { login, register } from "../../src/api/client";
 
 const COLORS = {
     white: "#FFFFFF",
@@ -50,10 +49,12 @@ export default function RegisterScreen() {
     function validate() {
         if (!name.trim()) return "Nom obligatoire";
         if (!email.trim()) return "Email obligatoire";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return "Email invalide";
         if (!password || password.length < 6) return "Mot de passe (min 6 caractères)";
         if (!adresse.trim()) return "Adresse obligatoire";
         if (!ville.trim()) return "Ville obligatoire";
         if (!codePostal.trim()) return "Code postal obligatoire";
+        if (!/^\d{5}$/.test(codePostal.trim())) return "Code postal invalide (5 chiffres)";
         return null;
     }
 
@@ -69,7 +70,7 @@ export default function RegisterScreen() {
             setLoading(true);
 
             // 1) Register
-            await apiRegister({
+            await register({
                 name: name.trim(),
                 email: email.trim(),
                 password,
@@ -107,7 +108,7 @@ export default function RegisterScreen() {
                         imageStyle={styles.leftImg}
                     >
                         <View style={styles.logoCircle}>
-                            <Text style={styles.logoText}>Tri’n Go</Text>
+                            <Text style={styles.logoText}>Tri'n Go</Text>
                         </View>
                     </ImageBackground>
 
@@ -201,6 +202,7 @@ export default function RegisterScreen() {
                                             placeholder="80000"
                                             placeholderTextColor={COLORS.placeholder}
                                             keyboardType="number-pad"
+                                            maxLength={5}
                                             style={styles.input}
                                         />
                                     </View>
@@ -267,7 +269,7 @@ const styles = StyleSheet.create({
 
     left: { justifyContent: "flex-start" },
     leftWide: { flexBasis: "42%", minHeight: 520 },
-    leftNarrow: { width: "100%", height: 220 },
+    leftNarrow: { width: "100%", height: 180 },
     leftImg: { resizeMode: "cover" },
 
     logoCircle: {
@@ -298,7 +300,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
 
-    header: { marginBottom: 16 },
+    header: { marginBottom: 12 },
     eyebrow: {
         fontSize: 13,
         textTransform: "uppercase",
@@ -307,18 +309,18 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         marginBottom: 6,
     },
-    title: { fontSize: 26, fontWeight: "800", color: COLORS.title },
+    title: { fontSize: 24, fontWeight: "800", color: COLORS.title },
     titleGreen: { color: COLORS.green },
-    subtitle: { marginTop: 8, color: COLORS.subtitle, fontSize: 14, lineHeight: 20 },
+    subtitle: { marginTop: 6, color: COLORS.subtitle, fontSize: 13, lineHeight: 18 },
 
-    form: { marginTop: 10 },
+    form: { marginTop: 6 },
 
     label: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: "700",
         color: "#1f2933",
-        marginBottom: 6,
-        marginTop: 12,
+        marginBottom: 4,
+        marginTop: 10,
     },
 
     inputWrap: {
@@ -327,32 +329,32 @@ const styles = StyleSheet.create({
         borderColor: COLORS.border,
         backgroundColor: COLORS.inputBg,
         borderRadius: 999,
-        paddingLeft: 40,
-        paddingRight: 16,
-        paddingVertical: Platform.OS === "ios" ? 12 : 8,
+        paddingLeft: 38,
+        paddingRight: 14,
+        paddingVertical: Platform.OS === "ios" ? 10 : 6,
     },
     prefix: {
         position: "absolute",
-        left: 14,
-        top: Platform.OS === "ios" ? 12 : 10,
-        fontSize: 15,
+        left: 12,
+        top: Platform.OS === "ios" ? 10 : 8,
+        fontSize: 14,
         opacity: 0.65,
     },
-    input: { fontSize: 14, color: "#111827" },
+    input: { fontSize: 13, color: "#111827" },
 
     row2: {
-        marginTop: 6,
+        marginTop: 4,
         flexDirection: "row",
-        gap: 12,
+        gap: 10,
     },
 
     error: { marginTop: 12, color: COLORS.error, fontSize: 13, fontWeight: "600" },
 
     btn: {
-        marginTop: 18,
+        marginTop: 16,
         borderRadius: 999,
         backgroundColor: COLORS.green,
-        paddingVertical: 14,
+        paddingVertical: 13,
         alignItems: "center",
         justifyContent: "center",
         shadowColor: COLORS.blue,
@@ -364,7 +366,7 @@ const styles = StyleSheet.create({
     btnText: { color: "#fff", fontWeight: "800", fontSize: 15 },
 
     footer: {
-        marginTop: 16,
+        marginTop: 14,
         fontSize: 13,
         color: "#6b7785",
         textAlign: "center",

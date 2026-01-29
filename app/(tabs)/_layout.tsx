@@ -1,8 +1,20 @@
+// app/(tabs)/_layout.tsx
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { Tabs, Redirect, type Href } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+
 import { getToken, clearToken } from "../../src/auth/session";
 import { me } from "../../src/api/client";
+
+const COLORS = {
+    green: "#70be55",
+    blue: "#06668C",
+    muted: "#6b7785",
+    bg: "#F5F7FA",
+};
+
+type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
 export default function TabsLayout() {
     const [ready, setReady] = useState(false);
@@ -34,8 +46,8 @@ export default function TabsLayout() {
 
     if (!ready) {
         return (
-            <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-                <ActivityIndicator />
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: COLORS.bg }}>
+                <ActivityIndicator size="large" color={COLORS.blue} />
             </View>
         );
     }
@@ -46,10 +58,121 @@ export default function TabsLayout() {
     }
 
     return (
-        <Tabs screenOptions={{ headerShown: true }}>
-            <Tabs.Screen name="index" options={{ title: "Accueil" }} />
-            <Tabs.Screen name="signalements" options={{ title: "Signalements" }} />
-            <Tabs.Screen name="profil" options={{ title: "Profil" }} />
+        <Tabs
+            screenOptions={{
+                headerShown: true,
+                headerStyle: {
+                    backgroundColor: "#fff",
+                },
+                headerTitleStyle: {
+                    fontWeight: "800",
+                    color: "#022B3A",
+                },
+                tabBarActiveTintColor: COLORS.green,
+                tabBarInactiveTintColor: COLORS.muted,
+                tabBarStyle: {
+                    backgroundColor: "#fff",
+                    borderTopColor: "#E5E7EB",
+                    paddingBottom: 4,
+                    height: 60,
+                },
+                tabBarLabelStyle: {
+                    fontWeight: "700",
+                    fontSize: 11,
+                },
+            }}
+        >
+            {/* Accueil / Dashboard */}
+            <Tabs.Screen
+                name="index"
+                options={{
+                    title: "Accueil",
+                    headerTitle: "Tri'n Go",
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="home" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            {/* Liste des signalement */}
+            <Tabs.Screen
+                name="signalements"
+                options={{
+                    title: "Signalements",
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="list" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            {/* Nouveau signalement */}
+            <Tabs.Screen
+                name="new-signalement"
+                options={{
+                    title: "Déclarer",
+                    tabBarIcon: ({ color, size }) => (
+                        <View
+                            style={{
+                                backgroundColor: COLORS.green,
+                                width: 48,
+                                height: 48,
+                                borderRadius: 999,
+                                alignItems: "center",
+                                justifyContent: "center",
+                                marginBottom: 16,
+                                shadowColor: COLORS.green,
+                                shadowOpacity: 0.4,
+                                shadowRadius: 8,
+                                shadowOffset: { width: 0, height: 4 },
+                                elevation: 4,
+                            }}
+                        >
+                            <Ionicons name="add" size={28} color="#fff" />
+                        </View>
+                    ),
+                    tabBarLabel: () => null, // Pas de label pour ce bouton spécial
+                }}
+            />
+
+            {/* Carte */}
+            <Tabs.Screen
+                name="map"
+                options={{
+                    title: "Carte",
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="map" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            {/* Profil */}
+            <Tabs.Screen
+                name="profile"
+                options={{
+                    title: "Profil",
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="person" size={size} color={color} />
+                    ),
+                }}
+            />
+
+            {/* Points - caché dans les tabs mais accessible */}
+            <Tabs.Screen
+                name="points"
+                options={{
+                    href: null, // Ne pas afficher dans la tab bar
+                    title: "Mes points",
+                }}
+            />
+
+            {/* Détail signalement - route dynamique cachée */}
+            <Tabs.Screen
+                name="signalement/[id]"
+                options={{
+                    href: null, // Ne pas afficher dans la tab bar
+                    title: "Détail",
+                }}
+            />
         </Tabs>
     );
 }

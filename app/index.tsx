@@ -1,11 +1,11 @@
 // app/index.tsx
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
-import { Redirect, type Href } from "expo-router";
+import { Redirect } from "expo-router";
 import { getToken } from "../src/auth/session";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
 
 export default function Index() {
-    const [target, setTarget] = useState<Href | null>(null);
+    const [target, setTarget] = useState<"/(auth)/login" | "/(tabs)">();
 
     useEffect(() => {
         (async () => {
