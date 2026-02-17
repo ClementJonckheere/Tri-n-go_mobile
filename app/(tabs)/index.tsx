@@ -153,7 +153,6 @@ export default function DashboardCitoyen() {
                     resizeMode="contain"
                 />
                 <View style={styles.heroTextWrap}>
-                    <Text style={styles.heroHello}>Bonjour {user?.name ?? ""} 👋</Text>
                     <Text style={styles.heroText}>
                         Merci de contribuer à une ville plus propre
                     </Text>

@@ -19,23 +19,39 @@ type IconName = React.ComponentProps<typeof Ionicons>["name"];
 export default function TabsLayout() {
     const [ready, setReady] = useState(false);
     const [authorized, setAuthorized] = useState(false);
+    const [isAgent, setIsAgent] = useState(false);
 
     useEffect(() => {
         (async () => {
             try {
+                console.log("[TABS-CITOYEN] Vérification auth...");
                 const token = await getToken();
+
                 if (!token) {
+                    console.log("[TABS-CITOYEN] Pas de token");
                     setAuthorized(false);
                     setReady(true);
                     return;
                 }
 
-                // Vérifie que le token est encore valide côté API
-                await me();
+                console.log("[TABS-CITOYEN] Token trouvé, appel me()...");
+                const user = await me();
+                console.log("[TABS-CITOYEN] User role:", user.role);
 
+                // Si c'est un agent/gestionnaire, rediriger vers (tabs-agent)
+                if (["agent", "chef_agent", "gestionnaire"].includes(user.role)) {
+                    console.log("[TABS-CITOYEN] C'est un agent, redirection...");
+                    setIsAgent(true);
+                    setAuthorized(false);
+                    setReady(true);
+                    return;
+                }
+
+                console.log("[TABS-CITOYEN] C'est un citoyen, autorisé");
                 setAuthorized(true);
                 setReady(true);
             } catch (e) {
+                console.log("[TABS-CITOYEN] Erreur:", e);
                 // token invalide => purge + retour login
                 await clearToken();
                 setAuthorized(false);
@@ -52,9 +68,13 @@ export default function TabsLayout() {
         );
     }
 
+    // Rediriger les agents vers leur interface
+    if (isAgent) {
+        return <Redirect href={"/(tabs-agent)" as Href} />;
+    }
+
     if (!authorized) {
-        const href: Href = "/(auth)/login";
-        return <Redirect href={href} />;
+        return <Redirect href={"/(auth)/login" as Href} />;
     }
 
     return (
@@ -94,7 +114,7 @@ export default function TabsLayout() {
                 }}
             />
 
-            {/* Liste des signalement */}
+            {/* Liste des signalements */}
             <Tabs.Screen
                 name="signalements"
                 options={{

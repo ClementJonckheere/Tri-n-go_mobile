@@ -6,6 +6,9 @@ import type { User } from "../types/user";
 import type { Signalement } from "../types/signalement";
 import { getToken, setToken, clearToken } from "../auth/session";
 
+// ============================================================
+// Types
+// ============================================================
 export type RegisterPayload = {
     name: string;
     email: string;
@@ -23,6 +26,7 @@ export type CreateSignalementPayload = {
     codePostal: string;
     lat?: number | null;
     lon?: number | null;
+    photo?: string | null; // base64 image data:image/...
 };
 
 // ============================================================
@@ -116,10 +120,16 @@ export async function register(payload: RegisterPayload): Promise<User> {
     } as User;
 }
 
+/**
+ * Déconnexion
+ */
 export async function logout(): Promise<void> {
     await clearToken();
 }
 
+/**
+ * Utilisateur connecté - GET /api/v1/auth/me
+ */
 export async function me(): Promise<User> {
     const data = await request<{
         ok: boolean;

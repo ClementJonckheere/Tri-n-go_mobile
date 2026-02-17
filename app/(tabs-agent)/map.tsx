@@ -1,6 +1,6 @@
 // app/(tabs-agent)/map.tsx
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, Pressable, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, Pressable, ScrollView, Image } from "react-native";
 import MapView, { Marker, Callout, Region } from "react-native-maps";
 import * as Location from "expo-location";
 import { useFocusEffect } from "@react-navigation/native";
@@ -10,6 +10,7 @@ import { getSignalements, geocode, me } from "../../src/api/client";
 import type { Signalement, CitoyenRef } from "../../src/types/signalement";
 import { TYPE_ENCOMBRANT_LABELS, STATUT_LABELS } from "../../src/types/signalement";
 import type { User } from "../../src/types/user";
+import { BACKEND_URL } from "../../src/config";
 
 const COLORS = {
     bg: "#F5F7FA",
@@ -40,6 +41,30 @@ type SignalementWithCoords = Signalement & { latitude: number; longitude: number
 
 const geocodeCache: Record<string, { lat: number; lon: number } | null> = {};
 
+// Composant Marker personnalisé avec image
+function CustomMarker({ item, isFocused }: { item: SignalementWithCoords; isFocused: boolean }) {
+    const color = getMarkerColor(item.statut);
+    const hasPhoto = !!item.photoFilename;
+    const photoUrl = hasPhoto ? `${BACKEND_URL}/uploads/${item.photoFilename}` : null;
+
+    return (
+        <View style={[styles.markerContainer, isFocused && styles.markerFocused]}>
+            <View style={[styles.markerPin, { backgroundColor: color }]}>
+                {photoUrl ? (
+                    <Image
+                        source={{ uri: photoUrl }}
+                        style={styles.markerImage}
+                        resizeMode="cover"
+                    />
+                ) : (
+                    <Text style={styles.markerIcon}>📦</Text>
+                )}
+            </View>
+            <View style={[styles.markerArrow, { borderTopColor: color }]} />
+        </View>
+    );
+}
+
 export default function AgentMapScreen() {
     const router = useRouter();
     const params = useLocalSearchParams<{ focusId?: string; lat?: string; lon?: string }>();
@@ -55,6 +80,7 @@ export default function AgentMapScreen() {
     const [selectedVille, setSelectedVille] = useState<string | null>(null);
     const [villes, setVilles] = useState<string[]>([]);
     const [region, setRegion] = useState<Region | null>(null);
+    const [showValidated, setShowValidated] = useState(false);
 
     async function geocodeAddress(adresse: string, ville: string, codePostal: string): Promise<{ lat: number; lon: number } | null> {
         const cacheKey = `${adresse}|${ville}|${codePostal}`;
@@ -140,10 +166,11 @@ export default function AgentMapScreen() {
                 }
             }
 
-            // Sinon, ajuster la région pour voir tous les markers
-            if (itemsWithCoords.length > 0) {
-                const lats = itemsWithCoords.map(i => i.latitude);
-                const lons = itemsWithCoords.map(i => i.longitude);
+            // Sinon, ajuster la région pour voir tous les markers (sauf validés)
+            const visibleItems = itemsWithCoords.filter(i => i.statut !== "valide");
+            if (visibleItems.length > 0) {
+                const lats = visibleItems.map(i => i.latitude);
+                const lons = visibleItems.map(i => i.longitude);
                 const minLat = Math.min(...lats);
                 const maxLat = Math.max(...lats);
                 const minLon = Math.min(...lons);
@@ -169,8 +196,14 @@ export default function AgentMapScreen() {
         if (!loading) load();
     }, []));
 
-    // Filtrer les items
+    // Filtrer les items - EXCLURE les validés par défaut
     let filteredItems = items;
+
+    // Par défaut, ne pas afficher les validés (sauf si toggle activé)
+    if (!showValidated) {
+        filteredItems = filteredItems.filter(s => s.statut !== "valide");
+    }
+
     if (selectedVille) {
         filteredItems = filteredItems.filter(s => s.ville === selectedVille);
     }
@@ -178,22 +211,15 @@ export default function AgentMapScreen() {
         filteredItems = filteredItems.filter(s => s.statut === selectedFilter);
     }
 
+    // Compter (sans les validés par défaut)
+    const itemsWithoutValidated = items.filter(s => s.statut !== "valide");
     const counts = {
-        all: items.length,
+        all: itemsWithoutValidated.length,
         signale: items.filter(s => s.statut === "signale").length,
         valide: items.filter(s => s.statut === "valide").length,
         en_cours: items.filter(s => s.statut === "en_cours").length,
         collecte: items.filter(s => s.statut === "collecte").length,
     };
-
-    function focusOnSignalement(item: SignalementWithCoords) {
-        mapRef.current?.animateToRegion({
-            latitude: item.latitude,
-            longitude: item.longitude,
-            latitudeDelta: 0.003,
-            longitudeDelta: 0.003,
-        }, 500);
-    }
 
     if (loading) {
         return (
@@ -235,10 +261,20 @@ export default function AgentMapScreen() {
     return (
         <View style={styles.page}>
             <View style={styles.header}>
-                <Text style={styles.title}>🗺️ Carte des signalements</Text>
-                <Text style={styles.subtitle}>
-                    {filteredItems.length} signalement{filteredItems.length > 1 ? "s" : ""} affiché{filteredItems.length > 1 ? "s" : ""}
-                </Text>
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.title}>🗺️ Carte des signalements</Text>
+                    <Text style={styles.subtitle}>
+                        {filteredItems.length} signalement{filteredItems.length > 1 ? "s" : ""} à traiter
+                    </Text>
+                </View>
+                <Pressable
+                    style={[styles.toggleBtn, showValidated && styles.toggleBtnActive]}
+                    onPress={() => setShowValidated(!showValidated)}
+                >
+                    <Text style={[styles.toggleText, showValidated && styles.toggleTextActive]}>
+                        {showValidated ? "✓ Validés" : "Validés"}
+                    </Text>
+                </Pressable>
             </View>
 
             {/* Filtre par ville (gestionnaire uniquement) */}
@@ -275,10 +311,6 @@ export default function AgentMapScreen() {
                         <View style={[styles.filterDot, { backgroundColor: COLORS.orange }]} />
                         <Text style={[styles.filterText, selectedFilter === "signale" && styles.filterTextActive]}>Signalés ({counts.signale})</Text>
                     </Pressable>
-                    <Pressable style={[styles.filterChip, selectedFilter === "valide" && styles.filterChipActive]} onPress={() => setSelectedFilter("valide")}>
-                        <View style={[styles.filterDot, { backgroundColor: COLORS.green }]} />
-                        <Text style={[styles.filterText, selectedFilter === "valide" && styles.filterTextActive]}>Validés ({counts.valide})</Text>
-                    </Pressable>
                     <Pressable style={[styles.filterChip, selectedFilter === "en_cours" && styles.filterChipActive]} onPress={() => setSelectedFilter("en_cours")}>
                         <View style={[styles.filterDot, { backgroundColor: COLORS.purple }]} />
                         <Text style={[styles.filterText, selectedFilter === "en_cours" && styles.filterTextActive]}>En cours ({counts.en_cours})</Text>
@@ -300,16 +332,24 @@ export default function AgentMapScreen() {
                 {filteredItems.map((s) => {
                     const citoyenData = typeof s.citoyen === "object" ? s.citoyen as CitoyenRef : null;
                     const isFocused = params.focusId === s._id;
+                    const photoUrl = s.photoFilename ? `${BACKEND_URL}/uploads/${s.photoFilename}` : null;
 
                     return (
                         <Marker
                             key={s._id}
                             coordinate={{ latitude: s.latitude, longitude: s.longitude }}
-                            pinColor={getMarkerColor(s.statut)}
-                            opacity={isFocused ? 1 : 0.85}
+                            anchor={{ x: 0.5, y: 1 }}
                         >
-                            <Callout onPress={() => router.push(`/gestion?highlight=${s._id}` as Href)}>
+                            <CustomMarker item={s} isFocused={isFocused} />
+                            <Callout onPress={() => router.push(`/gestion?highlight=${s._id}` as Href)} style={styles.calloutWrapper}>
                                 <View style={styles.callout}>
+                                    {photoUrl && (
+                                        <Image
+                                            source={{ uri: photoUrl }}
+                                            style={styles.calloutImage}
+                                            resizeMode="cover"
+                                        />
+                                    )}
                                     <Text style={styles.calloutTitle}>
                                         {TYPE_ENCOMBRANT_LABELS[s.typeEncombrant as keyof typeof TYPE_ENCOMBRANT_LABELS] ?? s.typeEncombrant ?? "Encombrant"}
                                     </Text>
@@ -336,10 +376,6 @@ export default function AgentMapScreen() {
                     <Text style={styles.legendText}>Signalé</Text>
                 </View>
                 <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: COLORS.green }]} />
-                    <Text style={styles.legendText}>Validé</Text>
-                </View>
-                <View style={styles.legendItem}>
                     <View style={[styles.legendDot, { backgroundColor: COLORS.purple }]} />
                     <Text style={styles.legendText}>En cours</Text>
                 </View>
@@ -351,6 +387,12 @@ export default function AgentMapScreen() {
                     <View style={[styles.legendDot, { backgroundColor: COLORS.danger }]} />
                     <Text style={styles.legendText}>Refusé</Text>
                 </View>
+                {showValidated && (
+                    <View style={styles.legendItem}>
+                        <View style={[styles.legendDot, { backgroundColor: COLORS.green }]} />
+                        <Text style={styles.legendText}>Validé</Text>
+                    </View>
+                )}
             </View>
         </View>
     );
@@ -358,9 +400,14 @@ export default function AgentMapScreen() {
 
 const styles = StyleSheet.create({
     page: { flex: 1, backgroundColor: COLORS.bg },
-    header: { padding: 14, backgroundColor: COLORS.card, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+    header: { padding: 14, backgroundColor: COLORS.card, borderBottomWidth: 1, borderBottomColor: COLORS.border, flexDirection: "row", alignItems: "center" },
     title: { fontSize: 18, fontWeight: "900", color: COLORS.title },
     subtitle: { marginTop: 2, color: COLORS.muted, fontWeight: "600", fontSize: 13 },
+
+    toggleBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: COLORS.bg, borderWidth: 1, borderColor: COLORS.border },
+    toggleBtnActive: { backgroundColor: COLORS.green, borderColor: COLORS.green },
+    toggleText: { fontSize: 12, fontWeight: "700", color: COLORS.muted },
+    toggleTextActive: { color: "#fff" },
 
     villeFilterContainer: { backgroundColor: COLORS.card, borderBottomWidth: 1, borderBottomColor: COLORS.border },
     villeFilters: { paddingHorizontal: 12, paddingVertical: 8, gap: 6, flexDirection: "row" },
@@ -386,7 +433,18 @@ const styles = StyleSheet.create({
     retryBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 12, backgroundColor: COLORS.blue, borderRadius: 999 },
     retryText: { color: "#fff", fontWeight: "800" },
 
-    callout: { width: 200, padding: 6 },
+    // Custom Marker
+    markerContainer: { alignItems: "center" },
+    markerFocused: { transform: [{ scale: 1.2 }] },
+    markerPin: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: "#fff", shadowColor: "#000", shadowOpacity: 0.3, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 5, overflow: "hidden" },
+    markerImage: { width: 38, height: 38, borderRadius: 19 },
+    markerIcon: { fontSize: 20 },
+    markerArrow: { width: 0, height: 0, borderLeftWidth: 8, borderRightWidth: 8, borderTopWidth: 10, borderLeftColor: "transparent", borderRightColor: "transparent", marginTop: -2 },
+
+    // Callout
+    calloutWrapper: { width: 220 },
+    callout: { padding: 8 },
+    calloutImage: { width: "100%", height: 100, borderRadius: 8, marginBottom: 8 },
     calloutTitle: { fontWeight: "900", color: COLORS.title, fontSize: 14, marginBottom: 6 },
     calloutBadge: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, marginBottom: 6 },
     calloutStatus: { fontWeight: "800", fontSize: 11, textTransform: "uppercase" },
