@@ -1,19 +1,34 @@
 // src/types/signalement.ts
 export type SignalementStatut = "signale" | "valide" | "en_cours" | "collecte" | "refuse";
 
-export type TypeEncombrant = 
-    | "meuble" 
-    | "electromenager" 
-    | "dechets_verts" 
-    | "plastiques" 
-    | "bois" 
+export type TypeEncombrant =
+    | "meuble"
+    | "electromenager"
+    | "dechets_verts"
+    | "plastiques"
+    | "bois"
     | "verre";
+
+export type HistoriqueStatut = {
+    from: string | null;
+    to: string;
+    changedBy?: string | { _id: string; name?: string };
+    changedAt?: string;
+};
+
+export type CitoyenRef = {
+    _id: string;
+    name?: string;
+    email?: string;
+    ville?: string;
+    pointsTotal?: number;
+};
 
 export type Signalement = {
     _id: string;
     description?: string;
     typeEncombrant?: TypeEncombrant | string;
-    statut?: SignalementStatut | string;
+    statut: SignalementStatut | string;
     dateSignalement?: string;
     adresse?: string;
     ville?: string;
@@ -22,6 +37,9 @@ export type Signalement = {
     lon?: number | null;
     photoFilename?: string | null;
     pointsAttribues?: number;
+    pointsCredites?: boolean;
+    citoyen?: string | CitoyenRef;
+    historiqueStatuts?: HistoriqueStatut[];
     createdAt?: string;
     updatedAt?: string;
 };

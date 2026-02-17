@@ -1,21 +1,18 @@
 // src/api/client.ts
+// Client API adapté au backend existant (routes/api.js)
+
 import { API_BASE_URL } from "../config";
 import type { User } from "../types/user";
 import type { Signalement } from "../types/signalement";
 import { getToken, setToken, clearToken } from "../auth/session";
 
-// ============================================================
-// Types
-// ============================================================
-type ApiResponse<T> = { ok: boolean } & T;
-
 export type RegisterPayload = {
     name: string;
     email: string;
     password: string;
-    adresse: string;
-    ville: string;
-    codePostal: string;
+    adresse?: string;
+    ville?: string;
+    codePostal?: string;
 };
 
 export type CreateSignalementPayload = {
@@ -26,36 +23,6 @@ export type CreateSignalementPayload = {
     codePostal: string;
     lat?: number | null;
     lon?: number | null;
-    photo?: string | null; // base64
-};
-
-export type UpdateProfilePayload = {
-    name?: string;
-    adresse?: string;
-    ville?: string;
-    codePostal?: string;
-};
-
-export type UsePointsPayload = {
-    pointsToUse: number;
-    decheterieAccountNumber: string;
-    saveAccount?: boolean;
-};
-
-export type PointsInfo = {
-    pointsTotal: number;
-    cashbackRate: number;
-    cashbackValue: number;
-    nextPalier: number;
-    progression: number;
-    decheterieAccountNumber: string | null;
-};
-
-export type UsePointsResult = {
-    pointsUsed: number;
-    euros: number;
-    newPointsTotal: number;
-    decheterieAccountNumber: string;
 };
 
 // ============================================================
@@ -93,27 +60,60 @@ async function request<T>(
 // ============================================================
 // Authentification
 // ============================================================
+
+/**
+ * Connexion - POST /api/v1/auth/login
+ */
 export async function login(email: string, password: string): Promise<User> {
-    const data = await request<ApiResponse<{ token: string; user: User }>>(
-        "/auth/login",
-        {
-            method: "POST",
-            body: { email, password },
-        }
-    );
+    const data = await request<{
+        ok: boolean;
+        token: string;
+        user: {
+            id: string;
+            name: string;
+            email: string;
+            role: string;
+            perimetreVille: string | null;
+        };
+    }>("/auth/login", {
+        method: "POST",
+        body: { email, password },
+    });
+
     await setToken(data.token);
-    return data.user;
+
+    return {
+        _id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+        perimetreVille: data.user.perimetreVille,
+    } as User;
 }
 
+/**
+ * Inscription - POST /api/v1/auth/register
+ */
 export async function register(payload: RegisterPayload): Promise<User> {
-    const data = await request<ApiResponse<{ user: User }>>(
-        "/auth/register",
-        {
-            method: "POST",
-            body: payload,
-        }
-    );
-    return data.user;
+    const data = await request<{
+        ok: boolean;
+        user: {
+            id: string;
+            name: string;
+            email: string;
+            role: string;
+        };
+    }>("/auth/register", {
+        method: "POST",
+        body: payload,
+    });
+
+    return {
+        _id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+    } as User;
 }
 
 export async function logout(): Promise<void> {
@@ -121,141 +121,183 @@ export async function logout(): Promise<void> {
 }
 
 export async function me(): Promise<User> {
-    const data = await request<ApiResponse<{ user: User }>>("/auth/me");
-    return data.user;
-}
+    const data = await request<{
+        ok: boolean;
+        user: {
+            _id?: string;
+            id?: string;
+            name: string;
+            email: string;
+            role: string;
+            pointsTotal?: number;
+            ville?: string;
+            codePostal?: string;
+            perimetreVille?: string | null;
+            cashbackUsedTotal?: number;
+            decheterieAccountNumber?: string;
+        };
+    }>("/auth/me");
 
-// ============================================================
-// Profil
-// ============================================================
-export async function updateProfile(payload: UpdateProfilePayload): Promise<User> {
-    const data = await request<ApiResponse<{ user: User }>>(
-        "/profile",
-        {
-            method: "PUT",
-            body: payload,
-        }
-    );
-    return data.user;
-}
-
-export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    await request<ApiResponse<{}>>("/profile/password", {
-        method: "PUT",
-        body: { currentPassword, newPassword },
-    });
+    return {
+        _id: data.user._id || data.user.id || "",
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role,
+        pointsTotal: data.user.pointsTotal || 0,
+        ville: data.user.ville,
+        codePostal: data.user.codePostal,
+        perimetreVille: data.user.perimetreVille,
+        cashbackUsedTotal: data.user.cashbackUsedTotal || 0,
+        decheterieAccountNumber: data.user.decheterieAccountNumber,
+    } as User;
 }
 
 // ============================================================
 // Signalements
 // ============================================================
+
+/**
+ * Liste des signalements - GET /api/v1/signalements
+ */
 export async function getSignalements(): Promise<Signalement[]> {
-    const data = await request<ApiResponse<{ items: Signalement[] }>>(
-        "/signalements"
-    );
+    const data = await request<{ ok: boolean; items: Signalement[] }>("/signalements");
     return data.items ?? [];
 }
 
-export async function getSignalement(id: string): Promise<Signalement> {
-    const data = await request<ApiResponse<{ item: Signalement }>>(
-        `/signalements/${id}`
-    );
+/**
+ * Détail d'un signalement (filtre local)
+ */
+export async function getSignalement(id: string): Promise<Signalement | null> {
+    const items = await getSignalements();
+    return items.find((s) => s._id === id) || null;
+}
+
+/**
+ * Créer un signalement - POST /api/v1/signalements
+ */
+export async function createSignalement(payload: CreateSignalementPayload): Promise<Signalement> {
+    const data = await request<{ ok: boolean; item: Signalement }>("/signalements", {
+        method: "POST",
+        body: payload,
+    });
     return data.item;
 }
 
-export async function createSignalement(
-    payload: CreateSignalementPayload
-): Promise<Signalement> {
-    const data = await request<ApiResponse<{ item: Signalement }>>(
-        "/signalements",
-        {
-            method: "POST",
-            body: payload,
-        }
-    );
+/**
+ * Changer le statut - PATCH /api/v1/admin/signalements/:id/statut
+ */
+export async function updateSignalementStatut(id: string, statut: string): Promise<Signalement> {
+    const data = await request<{ ok: boolean; item: Signalement }>(`/admin/signalements/${id}/statut`, {
+        method: "PATCH",
+        body: { statut },
+    });
     return data.item;
 }
 
 // ============================================================
-// Points & Cashback
+// Points (calculé côté client)
 // ============================================================
+const PALIER = 100;
+const CASHBACK_RATES = [
+    { min: 0, max: 99, rate: 0.05 },
+    { min: 100, max: 299, rate: 0.06 },
+    { min: 300, max: 499, rate: 0.07 },
+    { min: 500, max: Infinity, rate: 0.08 },
+];
+
+function getCashbackRate(points: number): number {
+    for (const tier of CASHBACK_RATES) {
+        if (points >= tier.min && points <= tier.max) return tier.rate;
+    }
+    return 0.05;
+}
+
+export type PointsInfo = {
+    pointsTotal: number;
+    cashbackRate: number;
+    cashbackValue: number;
+    nextPalier: number;
+    progression: number;
+    decheterieAccountNumber: string | null;
+};
+
 export async function getPointsInfo(): Promise<PointsInfo> {
-    const data = await request<ApiResponse<PointsInfo>>("/points");
+    const user = await me();
+    const pointsTotal = user.pointsTotal || 0;
+    const cashbackRate = getCashbackRate(pointsTotal);
+    const cashbackValue = pointsTotal * cashbackRate;
+    const nextPalier = (Math.floor(pointsTotal / PALIER) + 1) * PALIER;
+    const previousPalier = nextPalier - PALIER;
+    const progression = Math.max(0, Math.min(100, ((pointsTotal - previousPalier) / PALIER) * 100));
+
     return {
-        pointsTotal: data.pointsTotal,
-        cashbackRate: data.cashbackRate,
-        cashbackValue: data.cashbackValue,
-        nextPalier: data.nextPalier,
-        progression: data.progression,
-        decheterieAccountNumber: data.decheterieAccountNumber,
+        pointsTotal,
+        cashbackRate,
+        cashbackValue: Math.round(cashbackValue * 100) / 100,
+        nextPalier,
+        progression: Math.round(progression),
+        decheterieAccountNumber: user.decheterieAccountNumber || null,
     };
 }
 
-export async function usePoints(payload: UsePointsPayload): Promise<UsePointsResult> {
-    const data = await request<ApiResponse<UsePointsResult>>(
-        "/points/use",
-        {
-            method: "POST",
-            body: payload,
-        }
-    );
-    return data;
-}
-
 // ============================================================
-// Géocodage (proxy vers l'API IGN)
+// Géocodage (appel direct IGN)
 // ============================================================
-export async function geocode(adresse: string, ville: string, codePostal: string): Promise<{
-    lat: number;
-    lon: number;
-    label: string;
-} | null> {
+export async function geocode(adresse: string, ville: string, codePostal: string): Promise<{ lat: number; lon: number; label: string } | null> {
     try {
-        const params = new URLSearchParams({ adresse, ville, codePostal });
-        const data = await request<ApiResponse<{
-            ok: boolean;
-            lat: number;
-            lon: number;
-            label: string;
-        }>>(`/geocode?${params.toString()}`);
-
-        if (data.ok) {
-            return { lat: data.lat, lon: data.lon, label: data.label };
+        const q = [adresse, codePostal, ville].filter(Boolean).join(" ");
+        const res = await fetch(`https://data.geopf.fr/geocodage/search?q=${encodeURIComponent(q)}&limit=1`);
+        const data = await res.json();
+        if (data?.features?.length > 0) {
+            const f = data.features[0];
+            const [lon, lat] = f.geometry.coordinates;
+            return { lat, lon, label: f.properties?.label || q };
         }
         return null;
-    } catch {
-        return null;
-    }
+    } catch { return null; }
 }
 
-export async function reverseGeocode(lat: number, lon: number): Promise<{
-    adresse: string;
-    ville: string;
-    codePostal: string;
-} | null> {
+export async function reverseGeocode(lat: number, lon: number): Promise<{ adresse: string; ville: string; codePostal: string } | null> {
     try {
-        const params = new URLSearchParams({
-            lat: lat.toString(),
-            lon: lon.toString()
-        });
-        const data = await request<ApiResponse<{
-            ok: boolean;
-            voie: string;
-            commune: string;
-            postcode: string;
-            numero?: string;
-        }>>(`/reverse-geocode?${params.toString()}`);
-
-        if (data.ok) {
-            const numero = data.numero ? `${data.numero} ` : "";
+        const res = await fetch(`https://data.geopf.fr/geocodage/reverse?lat=${lat}&lon=${lon}&limit=1`);
+        const data = await res.json();
+        if (data?.features?.length > 0) {
+            const p = data.features[0].properties || {};
             return {
-                adresse: `${numero}${data.voie || ""}`.trim(),
-                ville: data.commune || "",
-                codePostal: data.postcode || "",
+                adresse: `${p.housenumber ? p.housenumber + " " : ""}${p.street || ""}`.trim(),
+                ville: p.city || "",
+                codePostal: p.postcode || "",
             };
         }
         return null;
-    } catch {
-        return null;
-    }
+    } catch { return null; }
+}
+
+export async function healthCheck(): Promise<boolean> {
+    try {
+        const data = await request<{ ok: boolean }>("/health");
+        return data.ok === true;
+    } catch { return false; }
+}
+
+// ============================================================
+// Profil
+// ============================================================
+export type UpdateProfilePayload = {
+    name?: string;
+    adresse?: string;
+    ville?: string;
+    codePostal?: string;
+};
+
+/**
+ * Modifier le profil - PUT /api/v1/profile
+ * NOTE: Nécessite d'ajouter cette route dans votre api.js backend
+ */
+export async function updateProfile(payload: UpdateProfilePayload): Promise<User> {
+    const data = await request<{ ok: boolean; user: User }>("/profile", {
+        method: "PUT",
+        body: payload,
+    });
+    return data.user;
 }
