@@ -1,44 +1,15 @@
 // app/(tabs)/map.tsx
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, Pressable, RefreshControl, ScrollView } from "react-native";
+import { View, Text, ActivityIndicator, Pressable, ScrollView } from "react-native";
 import MapView, { Marker, Callout, Region } from "react-native-maps";
 import * as Location from "expo-location";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter, type Href } from "expo-router";
-
 import { getSignalements, geocode } from "../../src/api/client";
 import type { Signalement } from "../../src/types/signalement";
 import { TYPE_ENCOMBRANT_LABELS, STATUT_LABELS } from "../../src/types/signalement";
-
-const COLORS = {
-    bg: "#F5F7FA",
-    card: "#FFFFFF",
-    title: "#022B3A",
-    text: "#111827",
-    muted: "#6b7785",
-    border: "#E5E7EB",
-    danger: "#B00020",
-    green: "#70be55",
-    blue: "#06668C",
-    orange: "#F59E0B",
-    purple: "#7C3AED",
-};
-
-// Couleur du marker selon le statut
-function getMarkerColor(statut?: string): string {
-    switch (statut?.toLowerCase()) {
-        case "valide":
-            return COLORS.green;
-        case "en_cours":
-            return COLORS.purple;
-        case "collecte":
-            return COLORS.blue;
-        case "refuse":
-            return COLORS.danger;
-        default:
-            return COLORS.orange; // orange pour "signalé"
-    }
-}
+import { COLORS, getStatusColor } from "../../src/styles";
+import { mapStyles as styles } from "../../src/styles/mapStyles";
 
 type Position = {
     latitude: number;
@@ -303,7 +274,7 @@ export default function MapScreen() {
                             latitude: s.latitude,
                             longitude: s.longitude,
                         }}
-                        pinColor={getMarkerColor(s.statut)}
+                        pinColor={getStatusColor(s.statut)}
                     >
                         <Callout
                             onPress={() => router.push(`/signalement/${s._id}` as Href)}
@@ -314,8 +285,8 @@ export default function MapScreen() {
                                         s.typeEncombrant ??
                                         "Encombrant"}
                                 </Text>
-                                <View style={[styles.calloutBadge, { backgroundColor: getMarkerColor(s.statut) + "20" }]}>
-                                    <Text style={[styles.calloutStatus, { color: getMarkerColor(s.statut) }]}>
+                                <View style={[styles.calloutBadge, { backgroundColor: getStatusColor(s.statut) + "20" }]}>
+                                    <Text style={[styles.calloutStatus, { color: getStatusColor(s.statut) }]}>
                                         {STATUT_LABELS[s.statut as keyof typeof STATUT_LABELS] ?? s.statut ?? "Signalé"}
                                     </Text>
                                 </View>
@@ -356,172 +327,3 @@ export default function MapScreen() {
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    page: { flex: 1, backgroundColor: COLORS.bg },
-
-    header: {
-        padding: 14,
-        backgroundColor: COLORS.card,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    title: {
-        fontSize: 18,
-        fontWeight: "900",
-        color: COLORS.title,
-    },
-    subtitle: {
-        marginTop: 2,
-        color: COLORS.muted,
-        fontWeight: "600",
-        fontSize: 13,
-    },
-
-    // Filtres
-    filtersContainer: {
-        backgroundColor: COLORS.card,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    filters: {
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        gap: 8,
-        flexDirection: "row",
-    },
-    filterChip: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 999,
-        backgroundColor: COLORS.bg,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        gap: 6,
-    },
-    filterChipActive: {
-        backgroundColor: COLORS.title,
-        borderColor: COLORS.title,
-    },
-    filterDot: {
-        width: 10,
-        height: 10,
-        borderRadius: 999,
-    },
-    filterText: {
-        fontSize: 12,
-        fontWeight: "700",
-        color: COLORS.muted,
-    },
-    filterTextActive: {
-        color: "#fff",
-    },
-
-    map: { flex: 1 },
-
-    center: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 20,
-        backgroundColor: COLORS.bg,
-    },
-    loadingText: {
-        marginTop: 12,
-        color: COLORS.muted,
-        fontWeight: "600",
-    },
-
-    errorTitle: {
-        fontSize: 18,
-        fontWeight: "900",
-        color: COLORS.danger,
-        marginBottom: 8,
-    },
-    error: {
-        color: COLORS.danger,
-        fontWeight: "600",
-        textAlign: "center",
-    },
-    retryBtn: {
-        marginTop: 16,
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        backgroundColor: COLORS.blue,
-        borderRadius: 999,
-    },
-    retryText: {
-        color: "#fff",
-        fontWeight: "800",
-    },
-
-    // Callout (bulle info)
-    callout: {
-        width: 200,
-        padding: 6,
-    },
-    calloutTitle: {
-        fontWeight: "900",
-        color: COLORS.title,
-        fontSize: 14,
-        marginBottom: 6,
-    },
-    calloutBadge: {
-        alignSelf: "flex-start",
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 999,
-        marginBottom: 6,
-    },
-    calloutStatus: {
-        fontWeight: "800",
-        fontSize: 11,
-        textTransform: "uppercase",
-    },
-    calloutDesc: {
-        color: COLORS.text,
-        fontSize: 12,
-        marginBottom: 6,
-        lineHeight: 16,
-    },
-    calloutAddr: {
-        color: COLORS.muted,
-        fontSize: 11,
-        marginBottom: 6,
-    },
-    calloutHint: {
-        color: COLORS.blue,
-        fontSize: 10,
-        fontWeight: "700",
-    },
-
-    // Légende
-    legend: {
-        flexDirection: "row",
-        justifyContent: "center",
-        gap: 12,
-        paddingVertical: 10,
-        paddingHorizontal: 8,
-        backgroundColor: COLORS.card,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
-        flexWrap: "wrap",
-    },
-    legendItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 5,
-    },
-    legendDot: {
-        width: 10,
-        height: 10,
-        borderRadius: 999,
-    },
-    legendText: {
-        fontSize: 11,
-        fontWeight: "700",
-        color: COLORS.muted,
-    },
-});

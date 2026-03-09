@@ -24,21 +24,18 @@ export default function TabsLayout() {
     useEffect(() => {
         (async () => {
             try {
-                console.log("[TABS-CITOYEN] Vérification auth...");
                 const token = await getToken();
 
                 if (!token) {
-                    console.log("[TABS-CITOYEN] Pas de token");
+                    console.log("Pas de token");
                     setAuthorized(false);
                     setReady(true);
                     return;
                 }
 
-                console.log("[TABS-CITOYEN] Token trouvé, appel me()...");
                 const user = await me();
-                console.log("[TABS-CITOYEN] User role:", user.role);
+                console.log("User role:", user.role);
 
-                // Si c'est un agent/gestionnaire, rediriger vers (tabs-agent)
                 if (["agent", "chef_agent", "gestionnaire"].includes(user.role)) {
                     console.log("[TABS-CITOYEN] C'est un agent, redirection...");
                     setIsAgent(true);
@@ -68,7 +65,6 @@ export default function TabsLayout() {
         );
     }
 
-    // Rediriger les agents vers leur interface
     if (isAgent) {
         return <Redirect href={"/(tabs-agent)" as Href} />;
     }
@@ -81,28 +77,32 @@ export default function TabsLayout() {
         <Tabs
             screenOptions={{
                 headerShown: true,
+
                 headerStyle: {
                     backgroundColor: "#fff",
                 },
+
                 headerTitleStyle: {
                     fontWeight: "800",
                     color: "#022B3A",
                 },
+
                 tabBarActiveTintColor: COLORS.green,
                 tabBarInactiveTintColor: COLORS.muted,
+
                 tabBarStyle: {
                     backgroundColor: "#fff",
                     borderTopColor: "#E5E7EB",
                     paddingBottom: 4,
                     height: 60,
                 },
+
                 tabBarLabelStyle: {
                     fontWeight: "700",
                     fontSize: 11,
                 },
             }}
         >
-            {/* Accueil / Dashboard */}
             <Tabs.Screen
                 name="index"
                 options={{
@@ -114,7 +114,6 @@ export default function TabsLayout() {
                 }}
             />
 
-            {/* Liste des signalements */}
             <Tabs.Screen
                 name="signalements"
                 options={{
@@ -125,7 +124,6 @@ export default function TabsLayout() {
                 }}
             />
 
-            {/* Nouveau signalement */}
             <Tabs.Screen
                 name="new-signalement"
                 options={{
@@ -150,11 +148,10 @@ export default function TabsLayout() {
                             <Ionicons name="add" size={28} color="#fff" />
                         </View>
                     ),
-                    tabBarLabel: () => null, // Pas de label pour ce bouton spécial
+                    tabBarLabel: () => null,
                 }}
             />
 
-            {/* Carte */}
             <Tabs.Screen
                 name="map"
                 options={{
@@ -165,7 +162,6 @@ export default function TabsLayout() {
                 }}
             />
 
-            {/* Profil */}
             <Tabs.Screen
                 name="profile"
                 options={{
@@ -176,20 +172,18 @@ export default function TabsLayout() {
                 }}
             />
 
-            {/* Points - caché dans les tabs mais accessible */}
             <Tabs.Screen
                 name="points"
                 options={{
-                    href: null, // Ne pas afficher dans la tab bar
+                    href: null,
                     title: "Mes points",
                 }}
             />
 
-            {/* Détail signalement - route dynamique cachée */}
             <Tabs.Screen
                 name="signalement/[id]"
                 options={{
-                    href: null, // Ne pas afficher dans la tab bar
+                    href: null,
                     title: "Détail",
                 }}
             />
