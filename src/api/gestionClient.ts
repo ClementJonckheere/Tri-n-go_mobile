@@ -334,17 +334,117 @@ export async function getDashboardStats(perimetreVille?: string): Promise<Dashbo
 }
 
 // ============================================================
-// Gestion des utilisateurs (non disponible dans l'API actuelle)
+// Gestion des utilisateurs
 // ============================================================
 
 export async function getUsersStats(): Promise<UsersStats> {
-    return { totalCitoyens: 0, totalAgents: 0, totalChefAgents: 0, totalGestionnaires: 0, total: 0 };
+    try {
+        const data = await request<{
+            ok: boolean;
+            totalCitoyens: number;
+            totalAgents: number;
+            totalChefAgents: number;
+            totalGestionnaires: number;
+            total: number;
+        }>("/users/stats");
+
+        return {
+            totalCitoyens: data.totalCitoyens || 0,
+            totalAgents: data.totalAgents || 0,
+            totalChefAgents: data.totalChefAgents || 0,
+            totalGestionnaires: data.totalGestionnaires || 0,
+            total: data.total || 0,
+        };
+    } catch (e) {
+        console.error("Erreur getUsersStats:", e);
+        return { totalCitoyens: 0, totalAgents: 0, totalChefAgents: 0, totalGestionnaires: 0, total: 0 };
+    }
 }
 
-export async function getUsers(_params?: { role?: string; search?: string }): Promise<UsersListResponse> {
-    return { items: [], total: 0, perimetres: [] };
+export async function getUsers(params?: { role?: string; search?: string; ville?: string }): Promise<UsersListResponse> {
+    try {
+        const queryParams = new URLSearchParams();
+        if (params?.role) queryParams.set("role", params.role);
+        if (params?.search) queryParams.set("search", params.search);
+        if (params?.ville) queryParams.set("ville", params.ville);
+
+        const queryString = queryParams.toString();
+        const path = queryString ? `/users?${queryString}` : "/users";
+
+        const data = await request<{
+            ok: boolean;
+            items: User[];
+            total: number;
+            perimetres: string[];
+        }>(path);
+
+        return {
+            items: data.items || [],
+            total: data.total || 0,
+            perimetres: data.perimetres || [],
+        };
+    } catch (e) {
+        console.error("Erreur getUsers:", e);
+        return { items: [], total: 0, perimetres: [] };
+    }
 }
 
-export async function toggleUserActive(_id: string): Promise<{ _id: string; isActive: boolean }> {
-    throw new Error("Cette fonctionnalité nécessite une route API supplémentaire");
+export async function getUser(id: string): Promise<{ user: User; signalements: Signalement[] } | null> {
+    try {
+        const data = await request<{
+            ok: boolean;
+            user: User;
+            signalements: Signalement[];
+        }>(`/users/${id}`);
+
+        return {
+            user: data.user,
+            signalements: data.signalements || [],
+        };
+    } catch (e) {
+        console.error("Erreur getUser:", e);
+        return null;
+    }
+}
+
+export async function toggleUserActive(id: string): Promise<{ _id: string; isActive: boolean }> {
+    const data = await request<{
+        ok: boolean;
+        _id: string;
+        isActive: boolean;
+    }>(`/users/${id}/toggle-active`, { method: "PATCH" });
+
+    return {
+        _id: data._id,
+        isActive: data.isActive,
+    };
+}
+
+export async function createUser(payload: {
+    name: string;
+    email: string;
+    password: string;
+    role: string;
+    perimetreVille?: string;
+}): Promise<User> {
+    const data = await request<{ ok: boolean; user: User }>("/users", {
+        method: "POST",
+        body: payload,
+    });
+    return data.user;
+}
+
+export async function updateUser(id: string, payload: {
+    name?: string;
+    email?: string;
+    role?: string;
+    perimetreVille?: string;
+    ville?: string;
+    pointsTotal?: number;
+}): Promise<User> {
+    const data = await request<{ ok: boolean; user: User }>(`/users/${id}`, {
+        method: "PUT",
+        body: payload,
+    });
+    return data.user;
 }

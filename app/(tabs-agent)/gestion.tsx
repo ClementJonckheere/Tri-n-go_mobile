@@ -1,12 +1,13 @@
 // app/(tabs-agent)/gestion.tsx
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, RefreshControl, Alert, Modal } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, RefreshControl, Alert, Modal, Image } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { me } from "../../src/api/client";
 import { getGestionSignalements, updateSignalementStatut, type GestionSignalement } from "../../src/api/gestionClient";
 import type { User } from "../../src/types/user";
 import { TYPE_ENCOMBRANT_LABELS, STATUT_LABELS, type CitoyenRef } from "../../src/types/signalement";
+import { BACKEND_URL } from "../../src/config";
 
 const COLORS = { bg: "#F5F7FA", card: "#FFFFFF", title: "#022B3A", text: "#111827", muted: "#6b7785", border: "#E5E7EB", blue: "#06668C", green: "#70be55", danger: "#B00020", orange: "#F59E0B" };
 const STATUTS = ["signale", "valide", "en_cours", "collecte", "refuse"] as const;
@@ -97,6 +98,7 @@ export default function GestionSignalementsScreen() {
                     const typeLabel = TYPE_ENCOMBRANT_LABELS[item.typeEncombrant as keyof typeof TYPE_ENCOMBRANT_LABELS] || item.typeEncombrant || "Encombrant";
                     const citoyenData = getCitoyenData(item.citoyen);
                     const citoyenId = getCitoyenId(item.citoyen);
+                    const photoUrl = item.photoFilename ? `${BACKEND_URL}/uploads/${item.photoFilename}` : null;
 
                     // Construire l'URL de la carte avec les coordonnées ou l'ID
                     const mapUrl = item.lat && item.lon
@@ -105,6 +107,14 @@ export default function GestionSignalementsScreen() {
 
                     return (
                         <View key={item._id} style={styles.card}>
+                            {/* Image de l'encombrant */}
+                            {photoUrl && (
+                                <Image
+                                    source={{ uri: photoUrl }}
+                                    style={styles.cardImage}
+                                    resizeMode="cover"
+                                />
+                            )}
                             <View style={styles.cardHeader}><View style={{ flex: 1 }}><Text style={styles.cardType}>{typeLabel}</Text><Text style={styles.cardDate}>{item.dateSignalement ? new Date(item.dateSignalement).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : "—"}</Text></View><Pressable onPress={() => { setSelectedItem(item); setModalVisible(true); }}><StatusBadge status={item.statut || "signale"} /></Pressable></View>
                             {!!item.description && <Text style={styles.cardDesc} numberOfLines={2}>{item.description}</Text>}
                             <Pressable onPress={() => router.push(mapUrl as Href)} style={styles.addrRow}>
@@ -141,7 +151,9 @@ const styles = StyleSheet.create({
     chipSmall: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: COLORS.bg, marginRight: 6, borderWidth: 1, borderColor: COLORS.border }, chipSmallActive: { backgroundColor: COLORS.green, borderColor: COLORS.green }, chipSmallText: { fontWeight: "600", color: COLORS.muted, fontSize: 12 }, chipSmallTextActive: { color: "#fff" },
     errorCard: { backgroundColor: "rgba(176,0,32,0.1)", padding: 12, borderRadius: 12 }, errorText: { color: COLORS.danger, fontWeight: "700" }, countText: { color: COLORS.muted, fontWeight: "700" },
     emptyCard: { backgroundColor: COLORS.card, padding: 24, borderRadius: 14, alignItems: "center" }, emptyText: { color: COLORS.muted },
-    card: { backgroundColor: COLORS.card, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border }, cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }, cardType: { fontWeight: "900", color: COLORS.title, fontSize: 15 }, cardDate: { color: COLORS.muted, fontSize: 12, marginTop: 2 }, cardDesc: { marginTop: 8, color: COLORS.text, lineHeight: 18 },
+    card: { backgroundColor: COLORS.card, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, overflow: "hidden" },
+    cardImage: { width: "100%", height: 160, borderRadius: 10, marginBottom: 12 },
+    cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }, cardType: { fontWeight: "900", color: COLORS.title, fontSize: 15 }, cardDate: { color: COLORS.muted, fontSize: 12, marginTop: 2 }, cardDesc: { marginTop: 8, color: COLORS.text, lineHeight: 18 },
     addrRow: { marginTop: 8, backgroundColor: COLORS.bg, padding: 10, borderRadius: 10 }, cardAddr: { color: COLORS.muted, fontSize: 13 }, mapLink: { color: COLORS.blue, fontSize: 12, fontWeight: "700", marginTop: 4 },
     citoyenRow: { marginTop: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: COLORS.bg, padding: 10, borderRadius: 10 }, citoyenName: { fontWeight: "700", color: COLORS.title }, citoyenPoints: { fontWeight: "800", color: COLORS.green },
     pointsBadge: { marginTop: 8, backgroundColor: "rgba(112,190,85,0.12)", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, alignSelf: "flex-start" }, pointsText: { color: COLORS.green, fontWeight: "800", fontSize: 12 },

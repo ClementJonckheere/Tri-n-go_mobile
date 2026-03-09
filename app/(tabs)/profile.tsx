@@ -334,9 +334,6 @@ export default function ProfileScreen() {
                 <Pressable style={styles.logoutBtn} onPress={handleLogout}>
                     <Text style={styles.logoutBtnText}>Se déconnecter</Text>
                 </Pressable>
-
-                {/* Version */}
-                <Text style={styles.version}>Tri'n Go v1.0.0</Text>
             </ScrollView>
         </KeyboardAvoidingView>
     );

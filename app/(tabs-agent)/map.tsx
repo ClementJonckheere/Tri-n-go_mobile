@@ -257,14 +257,18 @@ export default function AgentMapScreen() {
     });
 
     const isGestionnaire = user?.role === "gestionnaire";
+    const perimetre = user?.perimetreVille;
 
     return (
         <View style={styles.page}>
             <View style={styles.header}>
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.title}>🗺️ Carte des signalements</Text>
+                    <Text style={styles.title}>
+                        {isGestionnaire ? "🗺️ Tous les signalements" : `🗺️ Signalements - ${perimetre || "Mon secteur"}`}
+                    </Text>
                     <Text style={styles.subtitle}>
                         {filteredItems.length} signalement{filteredItems.length > 1 ? "s" : ""} à traiter
+                        {!isGestionnaire && perimetre && ` à ${perimetre}`}
                     </Text>
                 </View>
                 <Pressable

@@ -145,24 +145,11 @@ export default function DashboardCitoyen() {
             contentContainerStyle={styles.container}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-            {/* HERO */}
-            <View style={styles.hero}>
-                <Image
-                    source={require("../../assets/images/ordure.png")}
-                    style={styles.heroImg}
-                    resizeMode="contain"
-                />
-                <View style={styles.heroTextWrap}>
-                    <Text style={styles.heroText}>
-                        Merci de contribuer à une ville plus propre
-                    </Text>
-                </View>
-            </View>
 
             {/* ERREUR */}
             {!!error && (
                 <View style={styles.errorCard}>
-                    <Text style={styles.errorTitle}>⚠️ Erreur</Text>
+                    <Text style={styles.errorTitle}>Erreur</Text>
                     <Text style={styles.errorText}>{error}</Text>
                     <Pressable onPress={load} style={styles.retryBtn}>
                         <Text style={styles.retryBtnText}>Réessayer</Text>
