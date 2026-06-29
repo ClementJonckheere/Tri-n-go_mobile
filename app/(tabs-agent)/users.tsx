@@ -3,20 +3,20 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import {
-    getUsers,
-    getUsersStats,
-    toggleUserActive,
-    type UsersStats,
+  getUsers,
+  getUsersStats,
+  toggleUserActive,
+  type UsersStats,
 } from "../../src/api/gestionClient";
 import { COLORS, getRoleColor } from "../../src/styles";
 import { usersStyles as styles } from "../../src/styles/usersStyles";
