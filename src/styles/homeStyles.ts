@@ -1,3 +1,6 @@
+// src/styles/homeStyles.ts
+// Styles pour la page d'accueil citoyen
+
 import { StyleSheet } from "react-native";
 import { COLORS } from "./colors";
 
@@ -297,5 +300,58 @@ export const homeStyles = StyleSheet.create({
     logoutBtnText: {
         color: COLORS.muted,
         fontWeight: "800",
+    },
+
+    // Top citoyens / Classement
+    rankRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+    },
+    rankRowHighlight: {
+        backgroundColor: COLORS.green + "10",
+        marginHorizontal: -14,
+        paddingHorizontal: 14,
+        borderRadius: 12,
+    },
+    rankNum: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: COLORS.bg,
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 12,
+    },
+    rankNumText: {
+        fontWeight: "900",
+        color: COLORS.orange,
+        fontSize: 14,
+    },
+    rankInfo: {
+        flex: 1,
+    },
+    rankName: {
+        fontWeight: "800",
+        color: COLORS.title,
+        fontSize: 14,
+    },
+    rankNameMe: {
+        color: COLORS.green,
+    },
+    rankMeta: {
+        color: COLORS.muted,
+        fontSize: 12,
+        marginTop: 2,
+    },
+    rankPoints: {
+        fontWeight: "900",
+        color: COLORS.title,
+        fontSize: 15,
+    },
+    rankPointsMe: {
+        color: COLORS.green,
     },
 });

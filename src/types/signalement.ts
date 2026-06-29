@@ -1,63 +1,75 @@
 // src/types/signalement.ts
-export type SignalementStatut = "signale" | "valide" | "en_cours" | "collecte" | "refuse";
+export type SignalementStatut =
+  | "signale"
+  | "valide"
+  | "en_cours"
+  | "collecte"
+  | "refuse";
 
 export type TypeEncombrant =
-    | "meuble"
-    | "electromenager"
-    | "dechets_verts"
-    | "plastiques"
-    | "bois"
-    | "verre";
+  | "meuble"
+  | "electromenager"
+  | "dechets_verts"
+  | "plastiques"
+  | "bois"
+  | "verre";
 
 export type HistoriqueStatut = {
-    from: string | null;
-    to: string;
-    changedBy?: string | { _id: string; name?: string };
-    changedAt?: string;
+  from: string | null;
+  to: string;
+  changedBy?: string | { _id: string; name?: string };
+  changedAt?: string;
+  chefAgentAssigne?: string | null;
 };
 
 export type CitoyenRef = {
-    _id: string;
-    name?: string;
-    email?: string;
-    ville?: string;
-    pointsTotal?: number;
+  _id: string;
+  name?: string;
+  email?: string;
+  ville?: string;
+  pointsTotal?: number;
 };
 
 export type Signalement = {
-    _id: string;
-    description?: string;
-    typeEncombrant?: TypeEncombrant | string;
-    statut: SignalementStatut | string;
-    dateSignalement?: string;
-    adresse?: string;
-    ville?: string;
-    codePostal?: string;
-    lat?: number | null;
-    lon?: number | null;
-    photoFilename?: string | null;
-    pointsAttribues?: number;
-    pointsCredites?: boolean;
-    citoyen?: string | CitoyenRef;
-    historiqueStatuts?: HistoriqueStatut[];
-    createdAt?: string;
-    updatedAt?: string;
+  _id: string;
+  description?: string;
+  typeEncombrant?: TypeEncombrant | string;
+  statut: SignalementStatut | string;
+  dateSignalement?: string;
+  adresse?: string;
+  ville?: string;
+  codePostal?: string;
+  lat?: number | null;
+  lon?: number | null;
+  photoFilename?: string | null;
+  photoBase64?: string | null;
+  pointsAttribues?: number;
+  pointsCredites?: boolean;
+  citoyen?: string | CitoyenRef;
+  historiqueStatuts?: HistoriqueStatut[];
+  chefAgentAssigne?:
+    | string
+    | { _id: string; name?: string; email?: string }
+    | null;
+  dateAssignation?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 // Labels français pour l'affichage
 export const TYPE_ENCOMBRANT_LABELS: Record<TypeEncombrant, string> = {
-    meuble: "Meuble",
-    electromenager: "Électroménager",
-    dechets_verts: "Déchets verts",
-    plastiques: "Plastiques",
-    bois: "Bois",
-    verre: "Verre",
+  meuble: "Meuble",
+  electromenager: "Électroménager",
+  dechets_verts: "Déchets verts",
+  plastiques: "Plastiques",
+  bois: "Bois",
+  verre: "Verre",
 };
 
 export const STATUT_LABELS: Record<SignalementStatut, string> = {
-    signale: "Signalé",
-    valide: "Validé",
-    en_cours: "En cours",
-    collecte: "Collecté",
-    refuse: "Refusé",
+  signale: "Signalé",
+  valide: "Validé",
+  en_cours: "En cours",
+  collecte: "Collecté",
+  refuse: "Refusé",
 };

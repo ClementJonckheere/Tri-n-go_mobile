@@ -1,3 +1,6 @@
+// src/styles/gestionStyles.ts
+// Styles pour la page de gestion des signalements (agent/gestionnaire)
+
 import { StyleSheet } from "react-native";
 import { COLORS } from "./colors";
 
@@ -226,6 +229,17 @@ export const gestionStyles = StyleSheet.create({
     mapBtnText: {
         fontSize: 16,
     },
+    equipeBtn: {
+        backgroundColor: "rgba(6,102,140,0.1)",
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: COLORS.blue,
+    },
+    equipeBtnText: {
+        fontSize: 16,
+    },
 
     // Modal
     modalBackdrop: {
@@ -272,5 +286,73 @@ export const gestionStyles = StyleSheet.create({
     modalCancelText: {
         color: COLORS.muted,
         fontWeight: "700",
+    },
+
+    // Badge équipe
+    equipeBadge: {
+        backgroundColor: "rgba(6,102,140,0.1)",
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 999,
+        alignSelf: "flex-start",
+        marginTop: 8,
+    },
+    equipeText: {
+        color: COLORS.blue,
+        fontWeight: "700",
+        fontSize: 12,
+    },
+
+    // Modal sélection équipe
+    equipeOption: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+    },
+    equipeOptionSelected: {
+        backgroundColor: "rgba(112,190,85,0.08)",
+        marginHorizontal: -20,
+        paddingHorizontal: 20,
+    },
+    equipeRadio: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+        borderWidth: 2,
+        borderColor: COLORS.muted,
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 12,
+    },
+    equipeRadioSelected: {
+        borderColor: COLORS.green,
+    },
+    equipeRadioDot: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: COLORS.green,
+    },
+    equipeOptionText: {
+        fontWeight: "700",
+        color: COLORS.text,
+        fontSize: 14,
+    },
+    equipeOptionTextSelected: {
+        color: COLORS.green,
+    },
+    validateBtn: {
+        marginTop: 16,
+        backgroundColor: COLORS.green,
+        paddingVertical: 14,
+        borderRadius: 999,
+        alignItems: "center",
+    },
+    validateBtnText: {
+        color: "#fff",
+        fontWeight: "900",
+        fontSize: 15,
     },
 });

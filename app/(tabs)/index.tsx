@@ -17,7 +17,9 @@ import {
     getSignalements,
     logout,
     getPointsInfo,
-    type PointsInfo
+    getTopCitoyens,
+    type PointsInfo,
+    type TopCitoyen
 } from "../../src/api/client";
 import { TYPE_ENCOMBRANT_LABELS, STATUT_LABELS } from "../../src/types/signalement";
 import { COLORS, getStatusColor, getStatusBgColor } from "../../src/styles";
@@ -52,6 +54,7 @@ export default function DashboardCitoyen() {
     const [user, setUser] = useState<User | null>(null);
     const [items, setItems] = useState<Signalement[]>([]);
     const [pointsInfo, setPointsInfo] = useState<PointsInfo | null>(null);
+    const [topCitoyens, setTopCitoyens] = useState<TopCitoyen[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [refreshing, setRefreshing] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
@@ -59,14 +62,16 @@ export default function DashboardCitoyen() {
     async function load() {
         setError("");
         try {
-            const [u, s, p] = await Promise.all([
+            const [u, s, p, top] = await Promise.all([
                 me(),
                 getSignalements(),
                 getPointsInfo().catch(() => null),
+                getTopCitoyens().catch(() => []),
             ]);
             setUser(u);
             setItems(s || []);
             setPointsInfo(p);
+            setTopCitoyens(top || []);
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : "Erreur inconnue");
         } finally {
@@ -204,6 +209,68 @@ export default function DashboardCitoyen() {
                     ))
                 )}
             </View>
+
+            {/* Top citoyens - Classement */}
+            {topCitoyens.length > 0 && (
+                <View style={styles.card}>
+                    <View style={styles.cardHeader}>
+                        <Text style={styles.cardTitle}>🏆 Top citoyens</Text>
+                    </View>
+
+                    {topCitoyens.slice(0, 5).map((c, index) => {
+                        const isMe = user?._id === c.citoyenId;
+                        const medalEmoji = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "";
+
+                        return (
+                            <View
+                                key={c.citoyenId}
+                                style={[
+                                    styles.rankRow,
+                                    isMe && styles.rankRowHighlight,
+                                    index === topCitoyens.slice(0, 5).length - 1 && { borderBottomWidth: 0 }
+                                ]}
+                            >
+                                <View style={styles.rankNum}>
+                                    <Text style={styles.rankNumText}>
+                                        {medalEmoji || `#${index + 1}`}
+                                    </Text>
+                                </View>
+                                <View style={styles.rankInfo}>
+                                    <Text style={[styles.rankName, isMe && styles.rankNameMe]}>
+                                        {isMe ? "Vous" : c.name}
+                                    </Text>
+                                    <Text style={styles.rankMeta}>
+                                        {c.nbSignalements} signalement{c.nbSignalements > 1 ? "s" : ""}
+                                    </Text>
+                                </View>
+                                <Text style={[styles.rankPoints, isMe && styles.rankPointsMe]}>
+                                    {c.points} pts
+                                </Text>
+                            </View>
+                        );
+                    })}
+
+                    {/* Afficher la position de l'utilisateur s'il n'est pas dans le top 5 */}
+                    {user && !topCitoyens.slice(0, 5).find(c => c.citoyenId === user._id) && (
+                        <View style={[styles.rankRow, styles.rankRowHighlight, { marginTop: 8, borderTopWidth: 1, borderTopColor: COLORS.border }]}>
+                            <View style={styles.rankNum}>
+                                <Text style={styles.rankNumText}>
+                                    #{topCitoyens.findIndex(c => c.citoyenId === user._id) + 1 || "—"}
+                                </Text>
+                            </View>
+                            <View style={styles.rankInfo}>
+                                <Text style={[styles.rankName, styles.rankNameMe]}>Vous</Text>
+                                <Text style={styles.rankMeta}>
+                                    {items.length} signalement{items.length > 1 ? "s" : ""}
+                                </Text>
+                            </View>
+                            <Text style={[styles.rankPoints, styles.rankPointsMe]}>
+                                {points} pts
+                            </Text>
+                        </View>
+                    )}
+                </View>
+            )}
         </ScrollView>
     );
 }

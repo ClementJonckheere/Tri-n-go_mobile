@@ -1,3 +1,6 @@
+// src/styles/dashboardAgentStyles.ts
+// Styles pour le dashboard agent/gestionnaire
+
 import { StyleSheet, Dimensions } from "react-native";
 import { COLORS } from "./colors";
 
@@ -142,6 +145,53 @@ export const dashboardAgentStyles = StyleSheet.create({
         fontSize: 12,
     },
 
+    // Signalements urgents
+    urgentCard: {
+        backgroundColor: "#FEF2F2",
+        borderRadius: 14,
+        padding: 14,
+        flexDirection: "row",
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "#FECACA",
+    },
+    urgentIcon: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: "#FEE2E2",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 12,
+    },
+    urgentIconText: {
+        fontSize: 22,
+    },
+    urgentInfo: {
+        flex: 1,
+    },
+    urgentTitle: {
+        fontWeight: "900",
+        color: "#991B1B",
+        fontSize: 14,
+    },
+    urgentSubtitle: {
+        color: "#B91C1C",
+        fontSize: 12,
+        marginTop: 2,
+    },
+    urgentCount: {
+        backgroundColor: "#DC2626",
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 999,
+    },
+    urgentCountText: {
+        color: "#fff",
+        fontWeight: "900",
+        fontSize: 16,
+    },
+
     // Card générique
     card: {
         backgroundColor: COLORS.card,
@@ -267,9 +317,23 @@ export const dashboardAgentStyles = StyleSheet.create({
     agentRow: {
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: 10,
+        paddingVertical: 12,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
+    },
+    agentRank: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: COLORS.blue + "15",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 12,
+    },
+    agentRankText: {
+        fontWeight: "900",
+        color: COLORS.blue,
+        fontSize: 12,
     },
     agentInfo: {
         flex: 1,
@@ -277,13 +341,51 @@ export const dashboardAgentStyles = StyleSheet.create({
     agentName: {
         fontWeight: "800",
         color: COLORS.title,
+        fontSize: 14,
+    },
+    agentEmail: {
+        color: COLORS.blue,
+        fontSize: 12,
+        marginTop: 1,
     },
     agentRole: {
         color: COLORS.muted,
         fontSize: 12,
+        marginTop: 2,
+    },
+    agentStats: {
+        alignItems: "flex-end",
     },
     agentCount: {
-        fontWeight: "800",
+        fontWeight: "900",
         color: COLORS.blue,
+        fontSize: 18,
+    },
+    agentCountLabel: {
+        color: COLORS.muted,
+        fontSize: 11,
+    },
+
+    // Stats row (temps moyen)
+    statsRow: {
+        flexDirection: "row",
+        gap: 12,
+    },
+    statBox: {
+        flex: 1,
+        backgroundColor: COLORS.bg,
+        padding: 14,
+        borderRadius: 12,
+        alignItems: "center",
+    },
+    statBoxValue: {
+        fontSize: 22,
+        fontWeight: "900",
+        color: COLORS.blue,
+    },
+    statBoxLabel: {
+        color: COLORS.muted,
+        fontSize: 12,
+        marginTop: 4,
     },
 });

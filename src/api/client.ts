@@ -140,11 +140,13 @@ export async function me(): Promise<User> {
             email: string;
             role: string;
             pointsTotal?: number;
+            adresse?: string;
             ville?: string;
             codePostal?: string;
             perimetreVille?: string | null;
             cashbackUsedTotal?: number;
             decheterieAccountNumber?: string;
+            profilePicture?: string | null;
         };
     }>("/auth/me");
 
@@ -154,11 +156,13 @@ export async function me(): Promise<User> {
         email: data.user.email,
         role: data.user.role,
         pointsTotal: data.user.pointsTotal || 0,
+        adresse: data.user.adresse,
         ville: data.user.ville,
         codePostal: data.user.codePostal,
         perimetreVille: data.user.perimetreVille,
         cashbackUsedTotal: data.user.cashbackUsedTotal || 0,
         decheterieAccountNumber: data.user.decheterieAccountNumber,
+        profilePicture: data.user.profilePicture,
     } as User;
 }
 
@@ -310,4 +314,65 @@ export async function updateProfile(payload: UpdateProfilePayload): Promise<User
         body: payload,
     });
     return data.user;
+}
+
+/**
+ * Modifier la photo de profil - PUT /api/v1/profile/picture
+ * @param photoBase64 - Image en base64 (format data:image/...;base64,...)
+ */
+export async function updateProfilePicture(photoBase64: string): Promise<User> {
+    const data = await request<{ ok: boolean; user: User }>("/profile/picture", {
+        method: "PUT",
+        body: { photo: photoBase64 },
+    });
+    return data.user;
+}
+
+// ============================================================
+// Contact
+// ============================================================
+export type ContactMessagePayload = {
+    subject: string;
+    message: string;
+    userName?: string;
+    userEmail?: string;
+    userId?: string;
+};
+
+/**
+ * Envoyer un message de contact - POST /api/v1/contact
+ */
+export async function sendContactMessage(payload: ContactMessagePayload): Promise<{ ok: boolean }> {
+    const data = await request<{ ok: boolean }>("/contact", {
+        method: "POST",
+        body: payload,
+    });
+    return data;
+}
+
+// ============================================================
+// Top Citoyens (Classement)
+// ============================================================
+export type TopCitoyen = {
+    rank: number;
+    citoyenId: string;
+    name: string;
+    email?: string;
+    ville?: string;
+    points: number;
+    nbSignalements: number;
+};
+
+/**
+ * Récupérer le classement des top citoyens - GET /api/v1/citoyens/top
+ */
+export async function getTopCitoyens(): Promise<TopCitoyen[]> {
+    try {
+        const data = await request<{ ok: boolean; items: TopCitoyen[] }>("/citoyens/top");
+        return data.items ?? [];
+    } catch (e) {
+        // Fallback: calculer localement à partir des signalements
+        console.log("Top citoyens API non disponible, fallback local");
+        return [];
+    }
 }

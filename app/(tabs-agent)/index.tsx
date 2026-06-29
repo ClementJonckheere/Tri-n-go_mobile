@@ -171,6 +171,25 @@ export default function AgentDashboard() {
                 <KPICard label="Collectés" value={kpi?.totalCollectes ?? 0} color={COLORS.blue} icon="🚛" />
             </View>
 
+            {/* Signalements urgents (> 7 jours) */}
+            {(stats?.kpi?.signalementsUrgents ?? 0) > 0 && (
+                <Pressable
+                    style={styles.urgentCard}
+                    onPress={() => router.push("/gestion?statut=signale" as Href)}
+                >
+                    <View style={styles.urgentIcon}>
+                        <Text style={styles.urgentIconText}>🔥</Text>
+                    </View>
+                    <View style={styles.urgentInfo}>
+                        <Text style={styles.urgentTitle}>Signalements urgents</Text>
+                        <Text style={styles.urgentSubtitle}>En attente depuis plus de 7 jours</Text>
+                    </View>
+                    <View style={styles.urgentCount}>
+                        <Text style={styles.urgentCountText}>{stats?.kpi?.signalementsUrgents}</Text>
+                    </View>
+                </Pressable>
+            )}
+
             {/* Taux de validation */}
             <View style={styles.card}>
                 <Text style={styles.cardTitle}>Taux de validation</Text>
@@ -223,38 +242,46 @@ export default function AgentDashboard() {
                 </View>
             )}
 
-            {/* Top citoyens */}
-            {stats?.classementCitoyens && stats.classementCitoyens.length > 0 && (
+            {/* Signalements en attente par ville */}
+            {isGestionnaire && stats?.signalementsParVille && stats.signalementsParVille.length > 0 && (
                 <View style={styles.card}>
-                    <Text style={styles.cardTitle}>🏆 Top citoyens</Text>
-                    {stats.classementCitoyens.slice(0, 5).map(c => (
-                        <Pressable
-                            key={c.citoyenId}
-                            style={styles.rankRow}
-                            onPress={() => router.push(`/citoyen/${c.citoyenId}` as Href)}
-                        >
-                            <Text style={styles.rankNum}>#{c.rank}</Text>
-                            <View style={styles.rankInfo}>
-                                <Text style={styles.rankName}>{c.name}</Text>
-                                <Text style={styles.rankMeta}>{c.nbSignalements} signalements</Text>
+                    <Text style={styles.cardTitle}>📍 En attente par ville</Text>
+                    {stats.signalementsParVille.slice(0, 5).map(v => {
+                        const maxVal = stats.signalementsParVille[0]?.enAttente || 1;
+                        return (
+                            <View key={v.ville} style={styles.typeRow}>
+                                <Text style={styles.typeLabel}>{v.ville}</Text>
+                                <View style={styles.typeBarWrap}>
+                                    <ProgressBar value={v.enAttente} max={maxVal} color={COLORS.orange} />
+                                </View>
+                                <Text style={styles.typeValue}>{v.enAttente}</Text>
                             </View>
-                            <Text style={styles.rankPoints}>{c.points} pts</Text>
-                        </Pressable>
-                    ))}
+                        );
+                    })}
                 </View>
             )}
 
-            {/* Activité des agents */}
+            {/* Activité des agents - avec noms et emails */}
             {stats?.volumeParAgent && stats.volumeParAgent.length > 0 && (
                 <View style={styles.card}>
                     <Text style={styles.cardTitle}>📊 Activité des agents</Text>
-                    {stats.volumeParAgent.slice(0, 5).map(a => (
+                    {stats.volumeParAgent.slice(0, 5).map((a, index) => (
                         <View key={a.agentId} style={styles.agentRow}>
-                            <View style={styles.agentInfo}>
-                                <Text style={styles.agentName}>{a.name}</Text>
-                                <Text style={styles.agentRole}>{a.role} • {a.perimetreVille || "—"}</Text>
+                            <View style={styles.agentRank}>
+                                <Text style={styles.agentRankText}>#{index + 1}</Text>
                             </View>
-                            <Text style={styles.agentCount}>{a.totalValides} validés</Text>
+                            <View style={styles.agentInfo}>
+                                <Text style={styles.agentName}>{a.name || "Agent inconnu"}</Text>
+                                <Text style={styles.agentEmail}>{a.email || "—"}</Text>
+                                <Text style={styles.agentRole}>
+                                    {a.role === "chef_agent" ? "Chef d'équipe" : a.role === "gestionnaire" ? "Gestionnaire" : "Agent"}
+                                    {a.perimetreVille ? ` • ${a.perimetreVille}` : ""}
+                                </Text>
+                            </View>
+                            <View style={styles.agentStats}>
+                                <Text style={styles.agentCount}>{a.totalValides}</Text>
+                                <Text style={styles.agentCountLabel}>validés</Text>
+                            </View>
                         </View>
                     ))}
                 </View>

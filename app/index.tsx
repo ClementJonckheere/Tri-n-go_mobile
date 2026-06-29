@@ -4,6 +4,7 @@ import { ActivityIndicator, View } from "react-native";
 import { Redirect, type Href } from "expo-router";
 import { getToken } from "../src/auth/session";
 import { me } from "../src/api/client";
+import { COLORS } from "../src/styles/colors";
 
 export default function Index() {
     const [checking, setChecking] = useState(true);
@@ -30,10 +31,15 @@ export default function Index() {
     }, []);
 
     if (checking) {
-        return <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F5F7FA" }}><ActivityIndicator size="large" color="#06668C" /></View>;
+        return (
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: COLORS.bg }}>
+                <ActivityIndicator size="large" color={COLORS.green} />
+            </View>
+        );
     }
 
-    if (!hasToken) return <Redirect href={"/(auth)/login" as Href} />;
+    if (!hasToken) return <Redirect href={"/welcome" as Href} />;
+
     if (isAgent) return <Redirect href={"/(tabs-agent)" as Href} />;
     return <Redirect href={"/(tabs)" as Href} />;
 }

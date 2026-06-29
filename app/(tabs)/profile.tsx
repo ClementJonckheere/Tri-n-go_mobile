@@ -1,4 +1,3 @@
-// app/(tabs)/profile.tsx
 import React, { useEffect, useState } from "react";
 import {
     View,
@@ -10,11 +9,13 @@ import {
     Alert,
     KeyboardAvoidingView,
     Platform,
+    Image,
+    TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { me, updateProfile, logout } from "../../src/api/client";
+import * as ImagePicker from "expo-image-picker";
+import { me, updateProfile, updateProfilePicture, logout } from "../../src/api/client";
 import type { User } from "../../src/types/user";
-import { ROLE_LABELS } from "../../src/types/user";
 import { COLORS } from "../../src/styles";
 import { profileStyles as styles } from "../../src/styles/profileStyles";
 
@@ -24,6 +25,7 @@ export default function ProfileScreen() {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
@@ -40,7 +42,6 @@ export default function ProfileScreen() {
         try {
             const u = await me();
             setUser(u);
-            // Pré-remplir le formulaire
             setName(u.name || "");
             setAdresse(u.adresse || "");
             setVille(u.ville || "");
@@ -99,6 +100,80 @@ export default function ProfileScreen() {
         }
     }
 
+    async function handlePickImage() {
+        // Demander la permission
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+            Alert.alert("Permission refusée", "Nous avons besoin d'accéder à vos photos pour changer votre photo de profil.");
+            return;
+        }
+
+        // Ouvrir le sélecteur d'images
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ["images"],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.7,
+            base64: true,
+        });
+
+        if (!result.canceled && result.assets[0]) {
+            const asset = result.assets[0];
+            uploadProfilePicture(asset.base64!, asset.mimeType || "image/jpeg");
+        }
+    }
+
+    async function handleTakePhoto() {
+        // Demander la permission
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== "granted") {
+            Alert.alert("Permission refusée", "Nous avons besoin d'accéder à la caméra pour prendre une photo.");
+            return;
+        }
+
+        // Ouvrir la caméra
+        const result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.7,
+            base64: true,
+        });
+
+        if (!result.canceled && result.assets[0]) {
+            const asset = result.assets[0];
+            uploadProfilePicture(asset.base64!, asset.mimeType || "image/jpeg");
+        }
+    }
+
+    async function uploadProfilePicture(base64: string, mimeType: string) {
+        setUploadingPhoto(true);
+        setError("");
+        setSuccess("");
+
+        try {
+            const photoData = `data:${mimeType};base64,${base64}`;
+            const updated = await updateProfilePicture(photoData);
+            setUser(updated);
+            setSuccess("Photo de profil mise à jour !");
+        } catch (e: any) {
+            setError(e?.message || "Erreur lors de l'upload de la photo");
+        } finally {
+            setUploadingPhoto(false);
+        }
+    }
+
+    function showImageOptions() {
+        Alert.alert(
+            "Photo de profil",
+            "Comment voulez-vous ajouter une photo ?",
+            [
+                { text: "Annuler", style: "cancel" },
+                { text: "📷 Prendre une photo", onPress: handleTakePhoto },
+                { text: "🖼️ Choisir une image", onPress: handlePickImage },
+            ]
+        );
+    }
+
     async function handleLogout() {
         Alert.alert(
             "Déconnexion",
@@ -115,6 +190,13 @@ export default function ProfileScreen() {
                 },
             ]
         );
+    }
+
+    // Obtenir la ville à afficher (ville ou perimetreVille)
+    function getDisplayLocation(): string {
+        if (user?.ville) return user.ville;
+        if (user?.perimetreVille) return user.perimetreVille;
+        return "Non renseignée";
     }
 
     if (loading) {
@@ -151,16 +233,37 @@ export default function ProfileScreen() {
 
                 {/* Avatar & Infos principales */}
                 <View style={styles.headerCard}>
-                    <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>
-                            {user?.name?.charAt(0).toUpperCase() || "?"}
-                        </Text>
-                    </View>
+                    <TouchableOpacity
+                        style={styles.avatarContainer}
+                        onPress={showImageOptions}
+                        disabled={uploadingPhoto}
+                    >
+                        {user?.profilePicture ? (
+                            <Image
+                                source={{ uri: user.profilePicture }}
+                                style={styles.avatarImage}
+                            />
+                        ) : (
+                            <View style={styles.avatar}>
+                                <Text style={styles.avatarText}>
+                                    {user?.name?.charAt(0).toUpperCase() || "?"}
+                                </Text>
+                            </View>
+                        )}
+                        <View style={styles.avatarEditBadge}>
+                            {uploadingPhoto ? (
+                                <ActivityIndicator size="small" color={COLORS.white} />
+                            ) : (
+                                <Text style={styles.avatarEditIcon}>📷</Text>
+                            )}
+                        </View>
+                    </TouchableOpacity>
                     <Text style={styles.userName}>{user?.name}</Text>
                     <Text style={styles.userEmail}>{user?.email}</Text>
-                    <View style={styles.roleBadge}>
-                        <Text style={styles.roleText}>
-                            {ROLE_LABELS[user?.role || "citoyen"]}
+                    <View style={styles.locationBadge}>
+                        <Text style={styles.locationIcon}>📍</Text>
+                        <Text style={styles.locationText}>
+                            {getDisplayLocation()}
                         </Text>
                     </View>
                 </View>
